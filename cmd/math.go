@@ -45,6 +45,18 @@ func (v Float3) make2() Float2 {
 	return Float2{v.x, v.y}
 }
 
+func (v Float3) magnitude() float64 {
+	return math.Sqrt(v.x*v.x + v.y*v.y + v.z*v.z)
+}
+
+func (v Float3) normalized() Float3 {
+	mag := v.magnitude()
+	if mag == 0 {
+		return Float3{0, 0, 0}
+	}
+	return v.mulscal(1 / mag)
+}
+
 // clamp a float64
 func clamp(n, lo, hi float64) float64 {
 	if n > hi {

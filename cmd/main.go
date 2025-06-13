@@ -26,14 +26,17 @@ func main() {
 	mainScene := newScene()
 
 	mainScene.addModel(newModel(ModelInitOptions{
-		id:           "cube",
+		id:           "suzy",
 		loadFromPath: true,
-		path:         "assets/cube.obj",
+		path:         "assets/suzy.obj",
 		randColors:   true,
 	}))
-	mainScene.getModel("cube").transform.position = Float3{0, 0, 8}
-	mainScene.getModel("cube").shader = TextureShader{
-		texture: bmpToImage("assets/p2.bmp"),
+	mainScene.getModel("suzy").transform.position = Float3{0, 0, 8}
+	mainScene.getModel("suzy").transform.yaw = toRadians(180)
+	mainScene.getModel("suzy").transform.scale = Float3{1, 1, 1}
+	mainScene.getModel("suzy").shader = LitTextureShader{
+		texture:          bmpToImage("assets/c1.bmp"),
+		directionToLight: Float3{1, 1, 1},
 	}
 
 	for swr.running {

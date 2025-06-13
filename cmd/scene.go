@@ -60,15 +60,18 @@ type Transform struct {
 	yaw      float64
 	pitch    float64
 	position Float3
+	scale    Float3
 }
 
 func (t Transform) toWorldPoint(p Float3) Float3 {
 	ihat, jhat, khat := t.getBasisVectors()
-	return transformVector(ihat, jhat, khat, p).add(t.position)
+	//FIXME: scale
+	return transformVector(ihat.mulscal(t.scale.x), jhat.mulscal(t.scale.y), khat.mulscal(t.scale.z), p).add(t.position)
 }
 
 func (t Transform) toLocalPoint(worldPoint Float3) Float3 {
 	ihat, jhat, khat := t.getInverseBasisVectors()
+	//FIXME: scale
 	return transformVector(ihat, jhat, khat, worldPoint.sub(t.position))
 }
 
@@ -140,7 +143,7 @@ func (m Model) getNumTriangles() (n int) {
 func newModel(o ModelInitOptions) *Model {
 	// init the model
 	var model Model
-	model.transform = Transform{0, 0, Float3{0, 0, 0}}
+	model.transform = Transform{0, 0, Float3{0, 0, 0}, Float3{0, 0, 0}}
 
 	model.id = o.id
 

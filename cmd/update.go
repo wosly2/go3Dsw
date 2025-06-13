@@ -103,11 +103,12 @@ func (s *SWR) update(scene *Scene) {
 	keys := sdl.GetKeyboardState()
 	// rot
 	if keys[sdl.SCANCODE_UP] != 0 {
-		scene.cam.transform.pitch -= rotSpeed
+		scene.cam.transform.pitch += rotSpeed
 		scene.cam.transform.pitch = clamp(scene.cam.transform.pitch, toRadians(-85), toRadians(85))
 	}
 	if keys[sdl.SCANCODE_DOWN] != 0 {
-		scene.cam.transform.pitch += rotSpeed
+		scene.cam.transform.pitch -= rotSpeed
+		scene.cam.transform.pitch = clamp(scene.cam.transform.pitch, toRadians(-85), toRadians(85))
 	}
 	if keys[sdl.SCANCODE_LEFT] != 0 {
 		scene.cam.transform.yaw += rotSpeed
@@ -117,7 +118,7 @@ func (s *SWR) update(scene *Scene) {
 	}
 	// pos
 	// get bases
-	ihat, jhat, khat := scene.cam.transform.getBasisVectors()
+	ihat, _, khat := scene.cam.transform.getBasisVectors()
 	if keys[sdl.SCANCODE_W] != 0 {
 		scene.cam.transform.position = scene.cam.transform.position.add(khat.mulscal(moveSpeed))
 	}
@@ -125,10 +126,10 @@ func (s *SWR) update(scene *Scene) {
 		scene.cam.transform.position = scene.cam.transform.position.sub(khat.mulscal(moveSpeed))
 	}
 	if keys[sdl.SCANCODE_Q] != 0 {
-		scene.cam.transform.position = scene.cam.transform.position.add(jhat.mulscal(moveSpeed))
+		scene.cam.transform.position.y -= moveSpeed
 	}
 	if keys[sdl.SCANCODE_E] != 0 {
-		scene.cam.transform.position = scene.cam.transform.position.sub(jhat.mulscal(moveSpeed))
+		scene.cam.transform.position.y += moveSpeed
 	}
 	if keys[sdl.SCANCODE_A] != 0 {
 		scene.cam.transform.position = scene.cam.transform.position.sub(ihat.mulscal(moveSpeed))
@@ -150,10 +151,10 @@ func (s *SWR) update(scene *Scene) {
 	// get the pixels on the buffer
 	pixels := getPixels(s.buffer)
 
-	// load the image buffer into the surface buffer
+	// load the image buffer into the surface buffer, but upside down for funzies
 	for y, row := range s.pbuf.colorBuffer {
 		for x := range row {
-			pixels[y*int(s.buffer.W)+x] = s.pbuf.colorBuffer[y][x].toUint32()
+			pixels[y*int(s.buffer.W)+x] = s.pbuf.colorBuffer[s.pbuf.h-y-1][x].toUint32()
 			// fmt.Printf("(%v, %v, %v), %08x\n", s.pbuf[y][x].x, s.pbuf[y][x].y, s.pbuf[y][x].z, s.pbuf[y][x].toUint32())
 		}
 	}

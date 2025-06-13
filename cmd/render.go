@@ -27,7 +27,7 @@ func vertexToScreen(vertex Float3, transform Transform, cam Camera, numPixels Fl
 func render(img Image, model Model, cam Camera) Image {
 
 	for _, face := range model.faces {
-		triangleVertices, vertexTexCoords, _ := face.convertToTriangles()
+		triangleVertices, vertexTexCoords, vertexNormals := face.convertToTriangles()
 		for i := 0; i < len(triangleVertices); i += 3 {
 			// println(model.faceCount, curFace, model.vertices[curFace], trisDrawnThisFace)
 			a := vertexToScreen(triangleVertices[i+0], model.transform, cam, img.fs())
@@ -67,15 +67,21 @@ func render(img Image, model Model, cam Camera) Image {
 							panic(fmt.Sprintf("No shader selected on model %v!", model.id))
 						}
 
-						// FIXME: texture mapping
+						// texture weighting
 						var texCoord Float2
-						// p :=
-						texCoord = texCoord.add(vertexTexCoords[i+0].mulscal(weights.x / depths.x))
-						texCoord = texCoord.add(vertexTexCoords[i+1].mulscal(weights.y / depths.y))
-						texCoord = texCoord.add(vertexTexCoords[i+2].mulscal(weights.z / depths.z))
+						texCoord = texCoord.add(vertexTexCoords[i+0].mulscal(1 / depths.x).mulscal(weights.x))
+						texCoord = texCoord.add(vertexTexCoords[i+1].mulscal(1 / depths.y).mulscal(weights.y))
+						texCoord = texCoord.add(vertexTexCoords[i+2].mulscal(1 / depths.z).mulscal(weights.z))
 						texCoord = texCoord.mulscal(depth)
 
-						img.colorBuffer[y][x] = model.triangleCols[i/3].mulscal(0.1).add(model.shader.pixelColor(texCoord).mulscal(0.9))
+						// normal weighting
+						var normal Float3
+						normal = normal.add(vertexNormals[i+0].mulscal(1 / depths.x).mulscal(weights.x))
+						normal = normal.add(vertexNormals[i+1].mulscal(1 / depths.y).mulscal(weights.y))
+						normal = normal.add(vertexNormals[i+2].mulscal(1 / depths.z).mulscal(weights.z))
+						normal = normal.mulscal(depth)
+
+						img.colorBuffer[y][x] = model.shader.pixelColor(texCoord, normal) //model.triangleCols[i/3].mulscal(0.1).add(model.shader.pixelColor(texCoord, normal).mulscal(0.9))
 						//println(texCoord.x, texCoord.y)
 						img.depthBuffer[y][x] = depth
 					}

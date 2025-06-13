@@ -32,7 +32,7 @@ func bmpToImage(path string) (image Image) {
 // ----------- Shaders ------------
 
 type Shader interface {
-	pixelColor(Float2) Float3
+	pixelColor(Float2, Float3) Float3
 }
 
 // texture shader
@@ -41,6 +41,32 @@ type TextureShader struct {
 	texture Image
 }
 
-func (t TextureShader) pixelColor(coord Float2) Float3 {
+func (t TextureShader) pixelColor(coord Float2, _ Float3) Float3 {
 	return t.texture.sample(coord)
+}
+
+// lit shader
+
+type LitShader struct {
+	texture          Image
+	directionToLight Float3
+}
+
+func (l LitShader) pixelColor(_ Float2, normal Float3) Float3 {
+	normal = normal.normalized()
+	lightIntensity := (dot3(normal, l.directionToLight) + 1) * 0.5
+	return Float3{1, 1, 1}.mulscal(lightIntensity)
+}
+
+// litTexture shader, who could've seen it coming?
+
+type LitTextureShader struct {
+	texture          Image
+	directionToLight Float3
+}
+
+func (lt LitTextureShader) pixelColor(coord Float2, normal Float3) Float3 {
+	normal = normal.normalized()
+	lightIntensity := (dot3(normal, lt.directionToLight) + 1) * 0.5
+	return lt.texture.sample(coord).mulscal(lightIntensity)
 }
