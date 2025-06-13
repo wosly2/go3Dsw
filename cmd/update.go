@@ -17,10 +17,7 @@ type SWR struct {
 	initiated bool
 
 	buffer *sdl.Surface
-	pbuf   image
-
-	// other data
-	models []model
+	pbuf   Image
 }
 
 // initiating the rasterizer
@@ -48,10 +45,10 @@ func getPixels(surface *sdl.Surface) []uint32 {
 }
 
 // create an empty color buff
-func newColorBuffer(w, h int, color float3) (image [][]float3) {
-	image = make([][]float3, h)
+func newColorBuffer(w, h int, color Float3) (image [][]Float3) {
+	image = make([][]Float3, h)
 	for y := range image {
-		image[y] = make([]float3, w)
+		image[y] = make([]Float3, w)
 		for x := range image[y] {
 			image[y][x] = color
 		}
@@ -74,7 +71,7 @@ func newDepthBuffer(w, h int) (image [][]float64) {
 // -------------------------- update
 
 // core update for the software renderer
-func (s *SWR) update() {
+func (s *SWR) update(scene *Scene) {
 	// ---------------------- init
 	if !s.initiated {
 		// set our buffer up
@@ -84,20 +81,9 @@ func (s *SWR) update() {
 			panic(err)
 		}
 		// set out pixel buffer - buffer up
-		s.pbuf = newImage(int(s.buffer.W), int(s.buffer.W))
+		s.pbuf = newImage(int(s.buffer.W), int(s.buffer.H))
 		// clear it
 		s.buffer.FillRect(nil, 0)
-
-		// load in a model
-		s.models = make([]model, 1)
-		s.models[0].points = append(s.models[0].points, loadObjFile("assets/suzy.obj")...)
-		// model colors
-		s.models[0].triangleCols = make([]float3, len(s.models[0].points)/3)
-		for i := range s.models[0].triangleCols {
-			s.models[0].triangleCols[i] = randomColor()
-			//fmt.Printf("%v, %v, %v\n", s.models[0].triangleCols[i].x, s.models[0].triangleCols[i].y, s.models[0].triangleCols[i].z)
-		}
-		s.models[0].transform.position.z = 10
 
 		s.initiated = true
 	}
@@ -117,56 +103,49 @@ func (s *SWR) update() {
 	keys := sdl.GetKeyboardState()
 	// rot
 	if keys[sdl.SCANCODE_UP] != 0 {
-		s.models[0].transform.pitch += rotSpeed
+		scene.cam.transform.pitch -= rotSpeed
+		scene.cam.transform.pitch = clamp(scene.cam.transform.pitch, toRadians(-85), toRadians(85))
 	}
 	if keys[sdl.SCANCODE_DOWN] != 0 {
-		s.models[0].transform.pitch -= rotSpeed
+		scene.cam.transform.pitch += rotSpeed
 	}
 	if keys[sdl.SCANCODE_LEFT] != 0 {
-		s.models[0].transform.yaw -= rotSpeed
+		scene.cam.transform.yaw += rotSpeed
 	}
 	if keys[sdl.SCANCODE_RIGHT] != 0 {
-		s.models[0].transform.yaw += rotSpeed
+		scene.cam.transform.yaw -= rotSpeed
 	}
 	// pos
+	// get bases
+	ihat, jhat, khat := scene.cam.transform.getBasisVectors()
 	if keys[sdl.SCANCODE_W] != 0 {
-		s.models[0].transform.position.z += 0.05
+		scene.cam.transform.position = scene.cam.transform.position.add(khat.mulscal(moveSpeed))
 	}
 	if keys[sdl.SCANCODE_S] != 0 {
-		s.models[0].transform.position.z -= 0.05
+		scene.cam.transform.position = scene.cam.transform.position.sub(khat.mulscal(moveSpeed))
 	}
 	if keys[sdl.SCANCODE_Q] != 0 {
-		s.models[0].transform.position.y += 0.05
+		scene.cam.transform.position = scene.cam.transform.position.add(jhat.mulscal(moveSpeed))
 	}
 	if keys[sdl.SCANCODE_E] != 0 {
-		s.models[0].transform.position.y -= 0.05
+		scene.cam.transform.position = scene.cam.transform.position.sub(jhat.mulscal(moveSpeed))
 	}
 	if keys[sdl.SCANCODE_A] != 0 {
-		s.models[0].transform.position.x -= 0.05
+		scene.cam.transform.position = scene.cam.transform.position.sub(ihat.mulscal(moveSpeed))
 	}
 	if keys[sdl.SCANCODE_D] != 0 {
-		s.models[0].transform.position.x += 0.05
+		scene.cam.transform.position = scene.cam.transform.position.add(ihat.mulscal(moveSpeed))
 	}
-
-	// // spinny
-	// for i := range s.models {
-	// 	s.models[i].transform.yaw += 0.05
-	// 	s.models[i].transform.pitch += 0.05
-	// }
 
 	// --------------------- drawing
 
 	// clear
 	s.surface.FillRect(nil, 0)
-	s.pbuf.colorBuffer = newColorBuffer(int(s.buffer.W), int(s.buffer.H), float3{0, 0, 0})
+	s.pbuf.colorBuffer = newColorBuffer(int(s.buffer.W), int(s.buffer.H), Float3{0, 0, 0})
 	s.pbuf.depthBuffer = newDepthBuffer(int(s.buffer.W), int(s.buffer.H))
 
 	// -------------- draw
-
-	// manipulate s.pbuf
-	for _, model := range s.models {
-		s.pbuf = render(s.pbuf, int(s.buffer.W), int(s.buffer.H), model.transform, model.points, model.triangleCols, 60*math.Pi/180.0)
-	}
+	s.pbuf = renderScene(Scene(*scene), s.pbuf)
 
 	// get the pixels on the buffer
 	pixels := getPixels(s.buffer)

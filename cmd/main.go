@@ -22,8 +22,22 @@ func main() {
 	swr := SWR{}
 	swr.init(window)
 
+	// init scene
+	mainScene := newScene()
+
+	mainScene.addModel(newModel(ModelInitOptions{
+		id:           "cube",
+		loadFromPath: true,
+		path:         "assets/cube.obj",
+		randColors:   true,
+	}))
+	mainScene.getModel("cube").transform.position = Float3{0, 0, 8}
+	mainScene.getModel("cube").shader = TextureShader{
+		texture: bmpToImage("assets/p2.bmp"),
+	}
+
 	for swr.running {
-		swr.update()
+		swr.update(&mainScene)
 	}
 	defer swr.window.Destroy()
 }
