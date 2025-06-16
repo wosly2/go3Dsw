@@ -1,4 +1,4 @@
-package main
+package raster
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func check(e error) {
+func Check(e error) {
 	if e != nil {
 		panic(e)
 	}
@@ -49,7 +49,7 @@ func stringsToIntSlice(parts []string) ([]int, error) {
 
 func loadObjFile(path string) (faces []Face) {
 	data, err := os.ReadFile(path)
-	check(err)
+	Check(err)
 	return getObjData(string(data))
 }
 
