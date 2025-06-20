@@ -6,8 +6,7 @@ import (
 
 	"github.com/veandco/go-sdl2/sdl"
 	raster "github.com/wosly2/go3Dsw"
-
-	"test-project/font"
+	"github.com/wosly2/go3Dsw/font"
 )
 
 type Process struct { // implements raster.UpdateProcess
